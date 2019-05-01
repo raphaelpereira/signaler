@@ -5,8 +5,8 @@ import (
 	"net/url"
 
 	"github.com/gorilla/mux"
-	"github.com/pions/signaler/internal/api"
 	"github.com/pkg/errors"
+	"github.com/raphaelpereira/signaler/internal/api"
 )
 
 type Server interface {
