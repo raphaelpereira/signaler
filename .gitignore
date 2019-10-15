@@ -1,0 +1,5 @@
+.idea
+logs
+*.log
+.DS_Store
+ignore

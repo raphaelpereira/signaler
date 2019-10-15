@@ -67,6 +67,11 @@ func sendCandidate(s *session, raw []byte) error {
 
 func sendPing(session *session) error {
 	message := messagePing{messageBase: messageBase{Method: "ping"}}
+	err := session.websocket.SetReadDeadline(time.Now().Add(pingPeriod))
+	if err != nil {
+		log.Error().Msg("Failed to set ReadDeadLine")
+		return err
+	}
 	return session.WriteJSON(message)
 }
 
@@ -137,12 +142,12 @@ func handleWS(s *session) {
 				return
 			}
 		case raw := <-in:
-			log.Info().
-				Str("ApiKey", s.ApiKey).
-				Str("Room", s.Room).
-				Str("SessionKey", s.SessionKey).
-				Str("msg", string(raw)).
-				Msg("Reading from Websocket")
+			//log.Info().
+			//	Str("ApiKey", s.ApiKey).
+			//	Str("Room", s.Room).
+			//	Str("SessionKey", s.SessionKey).
+			//	Str("msg", string(raw)).
+			//	Msg("Reading from Websocket")
 			if err := handleClientMessage(s, raw); err != nil {
 				log.Error().Err(err).Msg("handleClientMessage has failed")
 				return
