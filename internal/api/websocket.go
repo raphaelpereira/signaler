@@ -67,11 +67,6 @@ func sendCandidate(s *session, raw []byte) error {
 
 func sendPing(session *session) error {
 	message := messagePing{messageBase: messageBase{Method: "ping"}}
-	err := session.websocket.SetReadDeadline(time.Now().Add(pingPeriod))
-	if err != nil {
-		log.Error().Msg("Failed to set ReadDeadLine")
-		return err
-	}
 	return session.WriteJSON(message)
 }
 
@@ -109,6 +104,9 @@ func handleClientMessage(session *session, raw []byte) error {
 	case "candidate":
 		return errors.Wrap(sendCandidate(session, raw), "sendCandidate failed")
 	case "pong":
+		session.mu.Lock()
+		defer session.mu.Unlock()
+		session.lastPong = time.Now()
 		return nil
 	default:
 		return fmt.Errorf("unknown client method %s", message.Method)
@@ -134,9 +132,17 @@ func handleWS(s *session) {
 		log.Info().Str("RemoteAddr", s.websocket.RemoteAddr().String()).Msg("HandleWS ending")
 	}()
 
+	s.lastPong = time.Now()
 	for {
 		select {
 		case _ = <-pingTicker.C:
+			s.mu.Lock()
+			lastPong := s.lastPong
+			s.mu.Unlock()
+			if lastPong.Before(time.Now().Add(-1*pingPeriod)) {
+				log.Error().Msg("no PONG, ending")
+				return
+			}
 			if err := sendPing(s); err != nil {
 				log.Error().Err(err).Msg("sendPing has failed")
 				return
@@ -170,7 +176,14 @@ func HandleRootWSUpgrade(w http.ResponseWriter, r *http.Request) {
 	if ok != true {
 		return
 	}
-	session := &session{mu: sync.Mutex{}, websocket: c, ApiKey: apiKey, Room: room, SessionKey: sessionKey}
+	session := &session{
+		lastPong: time.Now(),
+		mu: sync.Mutex{},
+		websocket: c,
+		ApiKey: apiKey,
+		Room: room,
+		SessionKey: sessionKey,
+	}
 
 	defer func() {
 		if err := pionRoom.DestroySession(apiKey, room, sessionKey); err != nil {

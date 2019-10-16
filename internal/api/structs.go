@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
@@ -55,6 +56,7 @@ type messagePing struct {
 type session struct {
 	ApiKey, Room, SessionKey string
 	websocket                *websocket.Conn
+	lastPong                 time.Time
 	mu                       sync.Mutex
 }
 
