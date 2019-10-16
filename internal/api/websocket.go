@@ -104,6 +104,12 @@ func handleClientMessage(session *session, raw []byte) error {
 	case "candidate":
 		return errors.Wrap(sendCandidate(session, raw), "sendCandidate failed")
 	case "pong":
+		log.Info().
+			Str("ApiKey", session.ApiKey).
+			Str("Room", session.Room).
+			Str("SessionKey", session.SessionKey).
+			Str("msg", string(raw)).
+			Msg("Reading from Websocket")
 		session.mu.Lock()
 		defer session.mu.Unlock()
 		session.lastPong = time.Now()
@@ -139,7 +145,7 @@ func handleWS(s *session) {
 			s.mu.Lock()
 			lastPong := s.lastPong
 			s.mu.Unlock()
-			if lastPong.Before(time.Now().Add(-1*pingPeriod)) {
+			if lastPong.Before(time.Now().Add(-2*pingPeriod)) {
 				log.Error().Msg("no PONG, ending")
 				return
 			}
