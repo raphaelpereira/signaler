@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	pionRoom "github.com/raphaelpereira/signaler/internal/room"
 	"github.com/pkg/errors"
+	pionRoom "github.com/raphaelpereira/signaler/internal/room"
 	"github.com/rs/zerolog/log"
 
 	"github.com/gorilla/websocket"
@@ -145,7 +145,7 @@ func handleWS(s *session) {
 			s.mu.Lock()
 			lastPong := s.lastPong
 			s.mu.Unlock()
-			if lastPong.Before(time.Now().Add(-2*pingPeriod)) {
+			if lastPong.Before(time.Now().Add(-3 * pingPeriod)) {
 				log.Error().Msg("no PONG, ending")
 				return
 			}
@@ -183,11 +183,11 @@ func HandleRootWSUpgrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	session := &session{
-		lastPong: time.Now(),
-		mu: sync.Mutex{},
-		websocket: c,
-		ApiKey: apiKey,
-		Room: room,
+		lastPong:   time.Now(),
+		mu:         sync.Mutex{},
+		websocket:  c,
+		ApiKey:     apiKey,
+		Room:       room,
 		SessionKey: sessionKey,
 	}
 
